@@ -5,6 +5,12 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from datetime import datetime
+import smtplib
+import logging
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+logger = logging.getLogger(__name__)
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -78,6 +84,28 @@ def verify_token(token, secret_key, max_age=3600):
         return None
 
 
+def send_email(app, to, subject, html_body):
+    server_cfg = app.config.get('MAIL_SERVER', '')
+    if not server_cfg or not app.config.get('MAIL_USERNAME', ''):
+        return False
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['From'] = app.config['MAIL_SENDER'] or app.config['MAIL_USERNAME']
+        msg['To'] = to
+        msg['Subject'] = subject
+        msg.attach(MIMEText(html_body, 'html'))
+
+        with smtplib.SMTP(server_cfg, app.config['MAIL_PORT'], timeout=10) as server:
+            if app.config.get('MAIL_USE_TLS', True):
+                server.starttls()
+            server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
+            server.send_message(msg)
+        return True
+    except Exception as e:
+        logger.warning(f'Failed to send email to {to}: {e}')
+        return False
+
+
 def register_routes(app):
 
     @app.route('/')
@@ -113,8 +141,16 @@ def register_routes(app):
         token = generate_confirmation_token(email, app.config['SECRET_KEY'])
         confirm_url = url_for('confirm_email', token=token, _external=True)
 
-        flash(f'Please confirm your email address using the following link: {confirm_url}', 'info')
-        return render_template('confirmation_sent.html', confirm_url=confirm_url, email=email)
+        email_sent = send_email(
+            app, email, 'Confirm your registration',
+            f'<h2>Confirm your email</h2>'
+            f'<p>Please click the link below to confirm your registration:</p>'
+            f'<p><a href="{confirm_url}">Confirm Email</a></p>'
+            f'<p>The link is valid for 1 hour.</p>'
+        )
+
+        return render_template('confirmation_sent.html',
+                               confirm_url=confirm_url, email=email, email_sent=email_sent)
 
     @app.route('/confirm/<token>')
     def confirm_email(token):
@@ -145,8 +181,17 @@ def register_routes(app):
             if member:
                 token = generate_confirmation_token(email, app.config['SECRET_KEY'])
                 delete_url = url_for('delete_confirm', token=token, _external=True)
-                flash(f'Please confirm: Click this link to delete your data: {delete_url}', 'info')
-                return render_template('delete_sent.html', delete_url=delete_url, email=email)
+
+                email_sent = send_email(
+                    app, email, 'Confirm data deletion',
+                    f'<h2>Confirm Deletion</h2>'
+                    f'<p>Click the link below to permanently delete your data:</p>'
+                    f'<p><a href="{delete_url}">Delete My Data</a></p>'
+                    f'<p>The link is valid for 1 hour.</p>'
+                )
+
+                return render_template('delete_sent.html',
+                                       delete_url=delete_url, email=email, email_sent=email_sent)
             else:
                 flash('No registration found with this email address.', 'error')
         return render_template('delete_request.html')

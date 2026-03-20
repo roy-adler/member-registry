@@ -3,9 +3,15 @@
 {% block content %}
 <div class="card">
     <h1>Almost there!</h1>
+    {% if email_sent %}
+    <p style="margin-bottom: 15px;">A confirmation email has been sent to <strong>{{ email }}</strong>.</p>
+    <p style="margin-bottom: 15px;">Please check your inbox and click the link to confirm your registration.</p>
+    <p style="color: #888; font-size: 14px;">The link is valid for 1 hour. Check your spam folder if you don't see it.</p>
+    {% else %}
     <p style="margin-bottom: 15px;">A confirmation request has been created for <strong>{{ email }}</strong>.</p>
-    <p style="margin-bottom: 15px;">Since no email server is configured, please click the following link to confirm your email:</p>
+    <p style="margin-bottom: 15px;">Email could not be sent. Please click the button below to confirm manually:</p>
     <p style="margin-bottom: 20px;"><a href="{{ confirm_url }}" class="btn btn-primary">Confirm Email</a></p>
     <p style="color: #888; font-size: 14px;">The link is valid for 1 hour.</p>
+    {% endif %}
 </div>
 {% endblock %}
