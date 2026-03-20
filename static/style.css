@@ -1,25 +1,25 @@
 /* ===== Theme Colors ===== */
 :root {
-    --color-primary: #3498db;
-    --color-primary-hover: #2980b9;
-    --color-danger: #e74c3c;
-    --color-danger-hover: #c0392b;
-    --color-secondary: #95a5a6;
-    --color-secondary-hover: #7f8c8d;
+    --color-primary: #b56576;
+    --color-primary-hover: #9e4f60;
+    --color-danger: #a04050;
+    --color-danger-hover: #883848;
+    --color-secondary: #8a8a8a;
+    --color-secondary-hover: #6e6e6e;
 
     --color-bg: transparent;
     --color-text: #333;
     --color-text-muted: #888;
     --color-text-label: #555;
-    --color-heading: #2c3e50;
-    --color-heading-sub: #34495e;
+    --color-heading: #333;
+    --color-heading-sub: #444;
 
     --color-card-bg: #fff;
     --color-card-shadow: rgba(0, 0, 0, 0.06);
     --color-border: #ddd;
     --color-border-light: #eee;
 
-    --color-table-header-bg: #f8f9fa;
+    --color-table-header-bg: #faf5f6;
 
     --color-flash-success-bg: #d4edda;
     --color-flash-success-text: #155724;
@@ -89,7 +89,7 @@ input:focus { outline: none; border-color: var(--color-primary); }
 .flash-info { background: var(--color-flash-info-bg); color: var(--color-flash-info-text); border: 1px solid var(--color-flash-info-border); word-break: break-all; }
 
 /* ===== Navigation ===== */
-nav { background: var(--color-heading); padding: 10px 0; margin-bottom: 16px; }
+nav { background: #b56576; padding: 10px 0; margin-bottom: 16px; }
 nav .nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
 nav a { color: rgba(255,255,255,0.85); text-decoration: none; margin-left: 12px; font-size: 14px; }
 nav a:hover { color: #fff; }
