@@ -2,17 +2,17 @@
 {% block title %}Admin Dashboard{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Mitgliederliste</h1>
+    <h1>Member List</h1>
     {% if members %}
     <table>
         <thead>
             <tr>
                 <th>Name</th>
-                <th>E-Mail</th>
-                <th>Adresse</th>
-                <th>Telefon</th>
-                <th>Registriert am</th>
-                <th>Aktionen</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Phone</th>
+                <th>Registered</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -22,11 +22,11 @@
                 <td>{{ m.email }}</td>
                 <td>{{ m.address }}</td>
                 <td>{{ m.phone }}</td>
-                <td>{{ m.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                <td>{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td class="actions">
-                    <a href="{{ url_for('admin_edit', member_id=m.id) }}" class="btn btn-primary">Bearbeiten</a>
-                    <form method="POST" action="{{ url_for('admin_delete', member_id=m.id) }}" onsubmit="return confirm('Wirklich loeschen?');">
-                        <button type="submit" class="btn btn-danger">Loeschen</button>
+                    <a href="{{ url_for('admin_edit', member_id=m.id) }}" class="btn btn-primary">Edit</a>
+                    <form method="POST" action="{{ url_for('admin_delete', member_id=m.id) }}" onsubmit="return confirm('Are you sure you want to delete this member?');">
+                        <button type="submit" class="btn btn-danger">Delete</button>
                     </form>
                 </td>
             </tr>
@@ -34,20 +34,20 @@
         </tbody>
     </table>
     {% else %}
-    <p style="color: #888;">Keine bestaetigten Mitglieder vorhanden.</p>
+    <p style="color: #888;">No confirmed members yet.</p>
     {% endif %}
 </div>
 
 {% if pending %}
 <div class="card">
-    <h2>Ausstehende Bestaetigungen</h2>
+    <h2>Pending Confirmations</h2>
     <table>
         <thead>
             <tr>
                 <th>Name</th>
-                <th>E-Mail</th>
-                <th>Registriert am</th>
-                <th>Aktionen</th>
+                <th>Email</th>
+                <th>Registered</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -55,10 +55,10 @@
             <tr>
                 <td>{{ m.name }}</td>
                 <td>{{ m.email }}</td>
-                <td>{{ m.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                <td>{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td class="actions">
-                    <form method="POST" action="{{ url_for('admin_delete', member_id=m.id) }}" onsubmit="return confirm('Wirklich loeschen?');">
-                        <button type="submit" class="btn btn-danger">Loeschen</button>
+                    <form method="POST" action="{{ url_for('admin_delete', member_id=m.id) }}" onsubmit="return confirm('Are you sure you want to delete this member?');">
+                        <button type="submit" class="btn btn-danger">Delete</button>
                     </form>
                 </td>
             </tr>

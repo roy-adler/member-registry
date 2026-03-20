@@ -92,12 +92,12 @@ def register_routes(app):
         phone = request.form.get('phone', '').strip()
 
         if not all([name, email, address, phone]):
-            flash('Alle Felder sind erforderlich.', 'error')
+            flash('All fields are required.', 'error')
             return redirect(url_for('index'))
 
         existing = Member.query.filter_by(email=email).first()
         if existing and existing.confirmed:
-            flash('Diese E-Mail-Adresse ist bereits registriert.', 'error')
+            flash('This email address is already registered.', 'error')
             return redirect(url_for('index'))
 
         if existing and not existing.confirmed:
@@ -113,27 +113,27 @@ def register_routes(app):
         token = generate_confirmation_token(email, app.config['SECRET_KEY'])
         confirm_url = url_for('confirm_email', token=token, _external=True)
 
-        flash(f'Bitte bestaetige deine E-Mail-Adresse ueber folgenden Link: {confirm_url}', 'info')
+        flash(f'Please confirm your email address using the following link: {confirm_url}', 'info')
         return render_template('confirmation_sent.html', confirm_url=confirm_url, email=email)
 
     @app.route('/confirm/<token>')
     def confirm_email(token):
         email = verify_token(token, app.config['SECRET_KEY'])
         if not email:
-            flash('Der Bestaetigungslink ist ungueltig oder abgelaufen.', 'error')
+            flash('The confirmation link is invalid or expired.', 'error')
             return redirect(url_for('index'))
 
         member = Member.query.filter_by(email=email).first()
         if not member:
-            flash('Mitglied nicht gefunden.', 'error')
+            flash('Member not found.', 'error')
             return redirect(url_for('index'))
 
         if member.confirmed:
-            flash('E-Mail wurde bereits bestaetigt.', 'info')
+            flash('Email has already been confirmed.', 'info')
         else:
             member.confirmed = True
             db.session.commit()
-            flash('E-Mail erfolgreich bestaetigt! Du bist jetzt registriert.', 'success')
+            flash('Email confirmed successfully! You are now registered.', 'success')
 
         return redirect(url_for('index'))
 
@@ -145,26 +145,26 @@ def register_routes(app):
             if member:
                 token = generate_confirmation_token(email, app.config['SECRET_KEY'])
                 delete_url = url_for('delete_confirm', token=token, _external=True)
-                flash(f'Bitte bestaetigen: Klicke diesen Link um deine Daten zu loeschen: {delete_url}', 'info')
+                flash(f'Please confirm: Click this link to delete your data: {delete_url}', 'info')
                 return render_template('delete_sent.html', delete_url=delete_url, email=email)
             else:
-                flash('Keine Registrierung mit dieser E-Mail-Adresse gefunden.', 'error')
+                flash('No registration found with this email address.', 'error')
         return render_template('delete_request.html')
 
     @app.route('/delete-confirm/<token>')
     def delete_confirm(token):
         email = verify_token(token, app.config['SECRET_KEY'])
         if not email:
-            flash('Der Link ist ungueltig oder abgelaufen.', 'error')
+            flash('The link is invalid or expired.', 'error')
             return redirect(url_for('index'))
 
         member = Member.query.filter_by(email=email).first()
         if member:
             db.session.delete(member)
             db.session.commit()
-            flash('Deine Daten wurden erfolgreich geloescht.', 'success')
+            flash('Your data has been successfully deleted.', 'success')
         else:
-            flash('Mitglied nicht gefunden.', 'error')
+            flash('Member not found.', 'error')
 
         return redirect(url_for('index'))
 
@@ -177,14 +177,14 @@ def register_routes(app):
             if admin and admin.check_password(password):
                 login_user(admin)
                 return redirect(url_for('admin_dashboard'))
-            flash('Ungueltige Anmeldedaten.', 'error')
+            flash('Invalid credentials.', 'error')
         return render_template('login.html')
 
     @app.route('/logout')
     @login_required
     def logout():
         logout_user()
-        flash('Erfolgreich abgemeldet.', 'success')
+        flash('Successfully logged out.', 'success')
         return redirect(url_for('index'))
 
     @app.route('/admin')
@@ -206,7 +206,7 @@ def register_routes(app):
             member.address = request.form.get('address', '').strip()
             member.phone = request.form.get('phone', '').strip()
             db.session.commit()
-            flash('Mitglied erfolgreich aktualisiert.', 'success')
+            flash('Member updated successfully.', 'success')
             return redirect(url_for('admin_dashboard'))
         return render_template('admin_edit.html', member=member)
 
@@ -217,7 +217,7 @@ def register_routes(app):
         if member:
             db.session.delete(member)
             db.session.commit()
-            flash('Mitglied erfolgreich geloescht.', 'success')
+            flash('Member deleted successfully.', 'success')
         return redirect(url_for('admin_dashboard'))
 
 

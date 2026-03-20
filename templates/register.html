@@ -1,23 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Registrierung{% endblock %}
+{% block title %}Register{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Mitglied registrieren</h1>
-    <p style="margin-bottom: 20px; color: #666;">Bitte fuellen Sie alle Felder aus. Sie erhalten einen Bestaetigungslink.</p>
+    <h1>Register as a Member</h1>
+    <p style="margin-bottom: 20px; color: #666;">Please fill in all fields. You will receive a confirmation link.</p>
     <form method="POST" action="{{ url_for('register') }}">
         <label for="name">Name</label>
-        <input type="text" id="name" name="name" required placeholder="Max Mustermann">
+        <input type="text" id="name" name="name" required placeholder="John Doe">
 
-        <label for="email">E-Mail</label>
-        <input type="email" id="email" name="email" required placeholder="max@beispiel.de">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required placeholder="john@example.com">
 
-        <label for="address">Adresse</label>
-        <input type="text" id="address" name="address" required placeholder="Musterstr. 1, 12345 Berlin">
+        <label for="address">Address</label>
+        <input type="text" id="address" name="address" required placeholder="123 Main St, City">
 
-        <label for="phone">Telefonnummer</label>
-        <input type="tel" id="phone" name="phone" required placeholder="+49 123 4567890">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" required placeholder="+1 234 567 8900">
 
-        <button type="submit" class="btn btn-primary">Registrieren</button>
+        <button type="submit" class="btn btn-primary">Register</button>
     </form>
 </div>
 {% endblock %}
