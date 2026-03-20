@@ -45,7 +45,7 @@ body {
 }
 
 /* ===== Layout ===== */
-.container { max-width: 600px; margin: 0 auto; padding: 15px; }
+.container { max-width: 800px; margin: 0 auto; padding: 15px; }
 .container.wide { max-width: 1100px; }
 
 /* ===== Cards ===== */
