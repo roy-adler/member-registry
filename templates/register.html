@@ -3,7 +3,7 @@
 {% block content %}
 <div class="card">
     <h1>Register as a Member</h1>
-    <p style="margin-bottom: 20px; color: #666;">Please fill in the required fields. You will receive a confirmation link.</p>
+    <p class="text-muted" style="margin-bottom: 16px;">Please fill in the required fields. You will receive a confirmation link.</p>
     <form method="POST" action="{{ url_for('register') }}">
         <label for="name">Name</label>
         <input type="text" id="name" name="name" required placeholder="John Doe">
@@ -11,10 +11,10 @@
         <label for="email">Email</label>
         <input type="email" id="email" name="email" required placeholder="john@example.com">
 
-        <label for="address">Address <span style="font-weight: normal; color: #999;">(optional)</span></label>
+        <label for="address">Address <span class="optional-label">(optional)</span></label>
         <input type="text" id="address" name="address" placeholder="123 Main St, City">
 
-        <label for="phone">Phone Number <span style="font-weight: normal; color: #999;">(optional)</span></label>
+        <label for="phone">Phone Number <span class="optional-label">(optional)</span></label>
         <input type="tel" id="phone" name="phone" placeholder="+1 234 567 8900">
 
         <button type="submit" class="btn btn-primary">Register</button>

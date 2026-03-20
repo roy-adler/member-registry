@@ -4,14 +4,14 @@
 <div class="card">
     <h1>Confirm Deletion</h1>
     {% if email_sent %}
-    <p style="margin-bottom: 15px;">A confirmation email has been sent to <strong>{{ email }}</strong>.</p>
-    <p style="margin-bottom: 15px;">Please check your inbox and click the link to confirm the deletion of your data.</p>
-    <p style="color: #888; font-size: 14px;">The link is valid for 1 hour. Check your spam folder if you don't see it.</p>
+    <p style="margin-bottom: 12px;">A confirmation email has been sent to <strong>{{ email }}</strong>.</p>
+    <p style="margin-bottom: 12px;">Please check your inbox and click the link to confirm the deletion of your data.</p>
+    <p class="text-muted text-small">The link is valid for 1 hour. Check your spam folder if you don't see it.</p>
     {% else %}
-    <p style="margin-bottom: 15px;">A deletion request has been created for <strong>{{ email }}</strong>.</p>
-    <p style="margin-bottom: 15px;">Email could not be sent. Please click the button below to confirm manually:</p>
-    <p style="margin-bottom: 20px;"><a href="{{ delete_url }}" class="btn btn-danger">Permanently Delete Data</a></p>
-    <p style="color: #888; font-size: 14px;">The link is valid for 1 hour.</p>
+    <p style="margin-bottom: 12px;">A deletion request has been created for <strong>{{ email }}</strong>.</p>
+    <p style="margin-bottom: 12px;">Email could not be sent. Please click the button below to confirm manually:</p>
+    <p style="margin-bottom: 16px;"><a href="{{ delete_url }}" class="btn btn-danger">Permanently Delete Data</a></p>
+    <p class="text-muted text-small">The link is valid for 1 hour.</p>
     {% endif %}
 </div>
 {% endblock %}

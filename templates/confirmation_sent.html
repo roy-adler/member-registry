@@ -4,9 +4,9 @@
 <div class="card">
     <h1>Almost there!</h1>
     {% if email_sent %}
-    <p style="margin-bottom: 15px;">A confirmation email has been sent to <strong>{{ email }}</strong>.</p>
-    <p style="margin-bottom: 15px;">Please check your inbox and click the link to confirm your registration.</p>
-    <p style="color: #888; font-size: 14px; margin-bottom: 20px;">The link is valid for 1 hour. Check your spam folder if you don't see it.</p>
+    <p style="margin-bottom: 12px;">A confirmation email has been sent to <strong>{{ email }}</strong>.</p>
+    <p style="margin-bottom: 12px;">Please check your inbox and click the link to confirm your registration.</p>
+    <p class="text-muted text-small" style="margin-bottom: 16px;">The link is valid for 1 hour. Check your spam folder if you don't see it.</p>
     <form method="POST" action="{{ url_for('resend_confirmation') }}">
         <input type="hidden" name="email" value="{{ email }}">
         <button type="submit" class="btn btn-secondary" id="resend-btn" disabled>Resend Email (<span id="countdown">30</span>s)</button>
@@ -28,10 +28,10 @@
         })();
     </script>
     {% else %}
-    <p style="margin-bottom: 15px;">A confirmation request has been created for <strong>{{ email }}</strong>.</p>
-    <p style="margin-bottom: 15px;">Email could not be sent. Please click the button below to confirm manually:</p>
-    <p style="margin-bottom: 20px;"><a href="{{ confirm_url }}" class="btn btn-primary">Confirm Email</a></p>
-    <p style="color: #888; font-size: 14px;">The link is valid for 1 hour.</p>
+    <p style="margin-bottom: 12px;">A confirmation request has been created for <strong>{{ email }}</strong>.</p>
+    <p style="margin-bottom: 12px;">Email could not be sent. Please click the button below to confirm manually:</p>
+    <p style="margin-bottom: 16px;"><a href="{{ confirm_url }}" class="btn btn-primary">Confirm Email</a></p>
+    <p class="text-muted text-small">The link is valid for 1 hour.</p>
     {% endif %}
 </div>
 {% endblock %}

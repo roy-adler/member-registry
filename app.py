@@ -28,6 +28,12 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'login'
 
+    @app.after_request
+    def allow_iframe(response):
+        response.headers['X-Frame-Options'] = 'ALLOWALL'
+        response.headers.pop('X-Frame-Options', None)
+        return response
+
     with app.app_context():
         db.create_all()
         ensure_admin_exists()

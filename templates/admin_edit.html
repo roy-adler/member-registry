@@ -10,10 +10,10 @@
         <label for="email">Email</label>
         <input type="email" id="email" name="email" required value="{{ member.email }}">
 
-        <label for="address">Address <span style="font-weight: normal; color: #999;">(optional)</span></label>
+        <label for="address">Address <span class="optional-label">(optional)</span></label>
         <input type="text" id="address" name="address" value="{{ member.address }}">
 
-        <label for="phone">Phone Number <span style="font-weight: normal; color: #999;">(optional)</span></label>
+        <label for="phone">Phone Number <span class="optional-label">(optional)</span></label>
         <input type="tel" id="phone" name="phone" value="{{ member.phone }}">
 
         <button type="submit" class="btn btn-primary">Save</button>
