@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Registrierung{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Mitglied registrieren</h1>
+    <p style="margin-bottom: 20px; color: #666;">Bitte fuellen Sie alle Felder aus. Sie erhalten einen Bestaetigungslink.</p>
+    <form method="POST" action="{{ url_for('register') }}">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required placeholder="Max Mustermann">
+
+        <label for="email">E-Mail</label>
+        <input type="email" id="email" name="email" required placeholder="max@beispiel.de">
+
+        <label for="address">Adresse</label>
+        <input type="text" id="address" name="address" required placeholder="Musterstr. 1, 12345 Berlin">
+
+        <label for="phone">Telefonnummer</label>
+        <input type="tel" id="phone" name="phone" required placeholder="+49 123 4567890">
+
+        <button type="submit" class="btn btn-primary">Registrieren</button>
+    </form>
+</div>
+{% endblock %}

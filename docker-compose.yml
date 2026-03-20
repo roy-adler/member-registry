@@ -1,0 +1,15 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=change-me-to-a-random-secret
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin123
+      - BASE_URL=http://localhost:5000
+    volumes:
+      - db_data:/app/instance
+
+volumes:
+  db_data:

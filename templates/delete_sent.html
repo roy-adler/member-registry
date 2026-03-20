@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Loeschung bestaetigen{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Loeschung bestaetigen</h1>
+    <p style="margin-bottom: 15px;">Eine Loeschanfrage wurde fuer <strong>{{ email }}</strong> erstellt.</p>
+    <p style="margin-bottom: 15px;">Klicke auf den folgenden Link um deine Daten endgueltig zu loeschen:</p>
+    <p style="margin-bottom: 20px;"><a href="{{ delete_url }}" class="btn btn-danger">Daten endgueltig loeschen</a></p>
+    <p style="color: #888; font-size: 14px;">Der Link ist 1 Stunde gueltig.</p>
+</div>
+{% endblock %}

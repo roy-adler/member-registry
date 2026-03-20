@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Mitgliederliste</h1>
+    {% if members %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>E-Mail</th>
+                <th>Adresse</th>
+                <th>Telefon</th>
+                <th>Registriert am</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in members %}
+            <tr>
+                <td>{{ m.name }}</td>
+                <td>{{ m.email }}</td>
+                <td>{{ m.address }}</td>
+                <td>{{ m.phone }}</td>
+                <td>{{ m.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                <td class="actions">
+                    <a href="{{ url_for('admin_edit', member_id=m.id) }}" class="btn btn-primary">Bearbeiten</a>
+                    <form method="POST" action="{{ url_for('admin_delete', member_id=m.id) }}" onsubmit="return confirm('Wirklich loeschen?');">
+                        <button type="submit" class="btn btn-danger">Loeschen</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #888;">Keine bestaetigten Mitglieder vorhanden.</p>
+    {% endif %}
+</div>
+
+{% if pending %}
+<div class="card">
+    <h2>Ausstehende Bestaetigungen</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>E-Mail</th>
+                <th>Registriert am</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in pending %}
+            <tr>
+                <td>{{ m.name }}</td>
+                <td>{{ m.email }}</td>
+                <td>{{ m.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                <td class="actions">
+                    <form method="POST" action="{{ url_for('admin_delete', member_id=m.id) }}" onsubmit="return confirm('Wirklich loeschen?');">
+                        <button type="submit" class="btn btn-danger">Loeschen</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

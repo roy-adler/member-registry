@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Bestaetigung{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Fast geschafft!</h1>
+    <p style="margin-bottom: 15px;">Eine Bestaetigungsanfrage wurde fuer <strong>{{ email }}</strong> erstellt.</p>
+    <p style="margin-bottom: 15px;">Da kein E-Mail-Server konfiguriert ist, klicke bitte auf den folgenden Link um deine E-Mail zu bestaetigen:</p>
+    <p style="margin-bottom: 20px;"><a href="{{ confirm_url }}" class="btn btn-primary">E-Mail bestaetigen</a></p>
+    <p style="color: #888; font-size: 14px;">Der Link ist 1 Stunde gueltig.</p>
+</div>
+{% endblock %}
