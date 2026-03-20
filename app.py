@@ -7,9 +7,12 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from datetime import datetime
 import smtplib
 import logging
+import sys
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+logging.basicConfig(stream=sys.stdout, level=logging.INFO,
+                    format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
 db = SQLAlchemy()
@@ -28,6 +31,12 @@ def create_app():
     with app.app_context():
         db.create_all()
         ensure_admin_exists()
+        mail_server = app.config.get('MAIL_SERVER', '')
+        mail_user = app.config.get('MAIL_USERNAME', '')
+        if mail_server and mail_user:
+            logger.info(f'SMTP configured: server={mail_server}, port={app.config.get("MAIL_PORT")}, user={mail_user}')
+        else:
+            logger.info('SMTP not configured — email confirmation will use manual fallback')
 
     register_routes(app)
     return app
@@ -86,23 +95,38 @@ def verify_token(token, secret_key, max_age=3600):
 
 def send_email(app, to, subject, html_body):
     server_cfg = app.config.get('MAIL_SERVER', '')
-    if not server_cfg or not app.config.get('MAIL_USERNAME', ''):
+    username = app.config.get('MAIL_USERNAME', '')
+    if not server_cfg or not username:
+        logger.info(f'Email to {to} skipped — SMTP not configured')
         return False
     try:
+        sender = app.config.get('MAIL_SENDER') or username
+        port = app.config.get('MAIL_PORT', 587)
+        logger.info(f'Sending email to={to}, subject="{subject}", server={server_cfg}:{port}, from={sender}')
+
         msg = MIMEMultipart('alternative')
-        msg['From'] = app.config['MAIL_SENDER'] or app.config['MAIL_USERNAME']
+        msg['From'] = sender
         msg['To'] = to
         msg['Subject'] = subject
         msg.attach(MIMEText(html_body, 'html'))
 
-        with smtplib.SMTP(server_cfg, app.config['MAIL_PORT'], timeout=10) as server:
+        with smtplib.SMTP(server_cfg, port, timeout=10) as server:
+            server.set_debuglevel(0)
             if app.config.get('MAIL_USE_TLS', True):
                 server.starttls()
-            server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
+            server.login(username, app.config['MAIL_PASSWORD'])
             server.send_message(msg)
+
+        logger.info(f'Email sent successfully to {to}')
         return True
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(f'SMTP auth failed for {username}: {e}')
+        return False
+    except smtplib.SMTPException as e:
+        logger.error(f'SMTP error sending to {to}: {e}')
+        return False
     except Exception as e:
-        logger.warning(f'Failed to send email to {to}: {e}')
+        logger.error(f'Failed to send email to {to}: {type(e).__name__}: {e}')
         return False
 
 
