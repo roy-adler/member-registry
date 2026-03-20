@@ -197,6 +197,58 @@ def register_routes(app):
 
         return redirect(url_for('index'))
 
+    @app.route('/resend-confirmation', methods=['POST'])
+    def resend_confirmation():
+        email_addr = request.form.get('email', '').strip()
+        member = Member.query.filter_by(email=email_addr, confirmed=False).first()
+        if not member:
+            flash('No pending registration found for this email.', 'error')
+            return redirect(url_for('index'))
+
+        token = generate_confirmation_token(email_addr, app.config['SECRET_KEY'])
+        confirm_url = url_for('confirm_email', token=token, _external=True)
+
+        email_sent = send_email(
+            app, email_addr, 'Confirm your registration',
+            f'<h2>Confirm your email</h2>'
+            f'<p>Please click the link below to confirm your registration:</p>'
+            f'<p><a href="{confirm_url}">Confirm Email</a></p>'
+            f'<p>The link is valid for 1 hour.</p>'
+        )
+
+        if email_sent:
+            flash('Confirmation email has been resent.', 'success')
+        else:
+            flash('Could not send email.', 'error')
+
+        return render_template('confirmation_sent.html',
+                               confirm_url=confirm_url, email=email_addr, email_sent=email_sent)
+
+    @app.route('/admin/resend-confirmation/<int:member_id>', methods=['POST'])
+    @login_required
+    def admin_resend_confirmation(member_id):
+        member = db.session.get(Member, member_id)
+        if not member or member.confirmed:
+            flash('Member not found or already confirmed.', 'error')
+            return redirect(url_for('admin_dashboard'))
+
+        token = generate_confirmation_token(member.email, app.config['SECRET_KEY'])
+        confirm_url = url_for('confirm_email', token=token, _external=True)
+
+        email_sent = send_email(
+            app, member.email, 'Confirm your registration',
+            f'<h2>Confirm your email</h2>'
+            f'<p>Please click the link below to confirm your registration:</p>'
+            f'<p><a href="{confirm_url}">Confirm Email</a></p>'
+            f'<p>The link is valid for 1 hour.</p>'
+        )
+
+        if email_sent:
+            flash(f'Confirmation email resent to {member.email}.', 'success')
+        else:
+            flash(f'Could not send email to {member.email}.', 'error')
+        return redirect(url_for('admin_dashboard'))
+
     @app.route('/delete-request', methods=['GET', 'POST'])
     def delete_request():
         if request.method == 'POST':
