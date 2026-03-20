@@ -49,8 +49,8 @@ class Member(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    address = db.Column(db.String(250), nullable=False)
-    phone = db.Column(db.String(50), nullable=False)
+    address = db.Column(db.String(250), nullable=True, default='')
+    phone = db.Column(db.String(50), nullable=True, default='')
     confirmed = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -119,8 +119,8 @@ def register_routes(app):
         address = request.form.get('address', '').strip()
         phone = request.form.get('phone', '').strip()
 
-        if not all([name, email, address, phone]):
-            flash('All fields are required.', 'error')
+        if not all([name, email]):
+            flash('Name and email are required.', 'error')
             return redirect(url_for('index'))
 
         existing = Member.query.filter_by(email=email).first()
