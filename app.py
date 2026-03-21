@@ -46,6 +46,15 @@ def create_app():
         else:
             logger.info('SMTP not configured — email confirmation will use manual fallback')
 
+    @app.context_processor
+    def inject_embed():
+        return {'embed': request.args.get('embed') == '1'}
+
+    @app.url_defaults
+    def propagate_embed(endpoint, values):
+        if 'embed' not in values and request.args.get('embed') == '1':
+            values['embed'] = '1'
+
     register_routes(app)
     return app
 
