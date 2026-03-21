@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response
+import csv
+import io
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -328,8 +330,13 @@ def register_routes(app):
         if not member:
             abort(404)
         if request.method == 'POST':
+            new_email = request.form.get('email', '').strip()
+            existing = Member.query.filter(Member.email == new_email, Member.id != member.id).first()
+            if existing:
+                flash('A member with this email already exists.', 'error')
+                return redirect(url_for('admin_edit', member_id=member.id))
             member.name = request.form.get('name', '').strip()
-            member.email = request.form.get('email', '').strip()
+            member.email = new_email
             member.address = request.form.get('address', '').strip()
             member.phone = request.form.get('phone', '').strip()
             db.session.commit()
@@ -345,6 +352,63 @@ def register_routes(app):
             db.session.delete(member)
             db.session.commit()
             flash('Member deleted successfully.', 'success')
+        return redirect(url_for('admin_dashboard'))
+
+    @app.route('/admin/export')
+    @login_required
+    def admin_export():
+        members = Member.query.filter_by(confirmed=True).order_by(Member.created_at.desc()).all()
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['Name', 'Email', 'Address', 'Phone', 'Registered'])
+        for m in members:
+            writer.writerow([m.name, m.email, m.address or '', m.phone or '', m.created_at.strftime('%Y-%m-%d %H:%M')])
+        csv_data = output.getvalue()
+        return Response(csv_data, mimetype='text/csv',
+                        headers={'Content-Disposition': 'attachment; filename=members.csv'})
+
+    @app.route('/admin/import', methods=['POST'])
+    @login_required
+    def admin_import():
+        file = request.files.get('file')
+        if not file or not file.filename.endswith('.csv'):
+            flash('Please upload a CSV file.', 'error')
+            return redirect(url_for('admin_dashboard'))
+
+        try:
+            content = file.stream.read().decode('utf-8')
+            reader = csv.DictReader(io.StringIO(content))
+        except Exception:
+            flash('Could not read CSV file.', 'error')
+            return redirect(url_for('admin_dashboard'))
+
+        existing_emails = {m.email.lower() for m in Member.query.all()}
+        added = 0
+        skipped = 0
+
+        for row in reader:
+            email = row.get('Email', '').strip()
+            name = row.get('Name', '').strip()
+            if not email or not name:
+                skipped += 1
+                continue
+            if email.lower() in existing_emails:
+                skipped += 1
+                continue
+
+            member = Member(
+                name=name,
+                email=email,
+                address=row.get('Address', '').strip(),
+                phone=row.get('Phone', '').strip(),
+                confirmed=True,
+            )
+            db.session.add(member)
+            existing_emails.add(email.lower())
+            added += 1
+
+        db.session.commit()
+        flash(f'Import complete: {added} added, {skipped} skipped (duplicate or invalid).', 'success')
         return redirect(url_for('admin_dashboard'))
 
 
