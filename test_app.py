@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import smtplib
 from flask import Flask
 
-from app import create_app, db, send_email
+from app import Member, create_app, db, send_email
 
 
 def make_mail_app(**config):
@@ -57,7 +57,7 @@ class SendEmailTest(unittest.TestCase):
         self.assertIn('auth failed', error)
 
 
-class AdminTestMailPageTest(unittest.TestCase):
+class AdminAppTest(unittest.TestCase):
     def setUp(self):
         self.db_fd, self.db_path = tempfile.mkstemp(suffix='.db')
         self.app = create_app({
@@ -88,6 +88,15 @@ class AdminTestMailPageTest(unittest.TestCase):
             'password': 'admin123',
         }, follow_redirects=True)
 
+    def add_member(self, name, email, confirmed=True):
+        with self.app.app_context():
+            member = Member(name=name, email=email, confirmed=confirmed)
+            db.session.add(member)
+            db.session.commit()
+            return member.id
+
+
+class AdminTestMailPageTest(AdminAppTest):
     def test_test_mail_page_requires_login(self):
         response = self.client.get('/admin/test-mail')
         self.assertEqual(response.status_code, 302)
@@ -127,6 +136,57 @@ class AdminTestMailPageTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.get_data(as_text=True)
         self.assertIn('connection timed out', body)
+
+
+class AdminBulkDeleteTest(AdminAppTest):
+    def test_bulk_delete_requires_login(self):
+        response = self.client.post('/admin/bulk-delete')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.headers['Location'])
+
+    def test_dashboard_shows_checkboxes_and_bulk_delete(self):
+        self.add_member('Ann', 'ann@example.com', confirmed=True)
+        self.add_member('Bob', 'bob@example.com', confirmed=False)
+        self.login()
+        body = self.client.get('/admin').get_data(as_text=True)
+        self.assertIn('name="member_ids"', body)
+        self.assertIn('Delete selected', body)
+
+    def test_bulk_delete_removes_selected_members_only(self):
+        keep_id = self.add_member('Keep', 'keep@example.com', confirmed=True)
+        delete_id = self.add_member('Gone', 'gone@example.com', confirmed=True)
+        pending_id = self.add_member('Pending', 'pending@example.com', confirmed=False)
+        self.login()
+        response = self.client.post('/admin/bulk-delete', data={
+            'member_ids': [str(delete_id)],
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        body = response.get_data(as_text=True)
+        self.assertIn('Deleted 1', body)
+        with self.app.app_context():
+            self.assertIsNone(db.session.get(Member, delete_id))
+            self.assertIsNotNone(db.session.get(Member, keep_id))
+            self.assertIsNotNone(db.session.get(Member, pending_id))
+
+    def test_bulk_delete_removes_selected_pending(self):
+        pending_id = self.add_member('Pending', 'pending@example.com', confirmed=False)
+        other_id = self.add_member('Other', 'other@example.com', confirmed=False)
+        self.login()
+        self.client.post('/admin/bulk-delete', data={
+            'member_ids': [str(pending_id)],
+        }, follow_redirects=True)
+        with self.app.app_context():
+            self.assertIsNone(db.session.get(Member, pending_id))
+            self.assertIsNotNone(db.session.get(Member, other_id))
+
+    def test_bulk_delete_with_no_selection_deletes_nothing(self):
+        member_id = self.add_member('Ann', 'ann@example.com', confirmed=True)
+        self.login()
+        response = self.client.post('/admin/bulk-delete', data={}, follow_redirects=True)
+        body = response.get_data(as_text=True)
+        self.assertIn('No members selected', body)
+        with self.app.app_context():
+            self.assertIsNotNone(db.session.get(Member, member_id))
 
 
 if __name__ == '__main__':

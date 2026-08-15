@@ -103,6 +103,8 @@ th { background: var(--color-table-header-bg); font-weight: 600; color: var(--co
 .actions { white-space: nowrap; }
 .actions form { display: inline; }
 .actions .btn { padding: 4px 10px; font-size: 13px; }
+.col-select { width: 36px; text-align: center; }
+.col-select input { margin: 0; vertical-align: middle; }
 
 /* ===== Helper ===== */
 .text-muted { color: var(--color-text-muted); }

@@ -368,6 +368,28 @@ def register_routes(app):
             flash('Member deleted successfully.', 'success')
         return redirect(url_for('admin_dashboard'))
 
+    @app.route('/admin/bulk-delete', methods=['POST'])
+    @login_required
+    def admin_bulk_delete():
+        ids = []
+        for value in request.form.getlist('member_ids'):
+            try:
+                ids.append(int(value))
+            except (TypeError, ValueError):
+                continue
+        if not ids:
+            flash('No members selected.', 'error')
+            return redirect(url_for('admin_dashboard'))
+
+        members = Member.query.filter(Member.id.in_(ids)).all()
+        count = len(members)
+        for member in members:
+            db.session.delete(member)
+        db.session.commit()
+        label = 'member' if count == 1 else 'members'
+        flash(f'Deleted {count} {label}.', 'success')
+        return redirect(url_for('admin_dashboard'))
+
     @app.route('/admin/export')
     @login_required
     def admin_export():

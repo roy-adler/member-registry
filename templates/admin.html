@@ -2,6 +2,9 @@
 {% block title %}Admin Dashboard{% endblock %}
 {% block container_class %}wide{% endblock %}
 {% block content %}
+<form id="bulk-members" method="POST" action="{{ url_for('admin_bulk_delete') }}" onsubmit="return confirmBulkDelete(this);"></form>
+<form id="bulk-pending" method="POST" action="{{ url_for('admin_bulk_delete') }}" onsubmit="return confirmBulkDelete(this);"></form>
+
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
         <h1 style="margin-bottom: 0;">Member List</h1>
@@ -15,9 +18,15 @@
         </div>
     </div>
     {% if members %}
+    <div style="margin-bottom: 8px;">
+        <button type="submit" form="bulk-members" class="btn btn-danger">Delete selected</button>
+    </div>
     <table>
         <thead>
             <tr>
+                <th class="col-select">
+                    <input type="checkbox" title="Select all" onclick="toggleSelectAll(this, 'bulk-members')">
+                </th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Address</th>
@@ -29,6 +38,9 @@
         <tbody>
             {% for m in members %}
             <tr>
+                <td class="col-select">
+                    <input type="checkbox" name="member_ids" value="{{ m.id }}" form="bulk-members">
+                </td>
                 <td>{{ m.name }}</td>
                 <td>{{ m.email }}</td>
                 <td>{{ m.address }}</td>
@@ -51,10 +63,16 @@
 
 {% if pending %}
 <div class="card">
-    <h2>Pending Confirmations</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+        <h2 style="margin-bottom: 0;">Pending Confirmations</h2>
+        <button type="submit" form="bulk-pending" class="btn btn-danger">Delete selected</button>
+    </div>
     <table>
         <thead>
             <tr>
+                <th class="col-select">
+                    <input type="checkbox" title="Select all" onclick="toggleSelectAll(this, 'bulk-pending')">
+                </th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Registered</th>
@@ -64,6 +82,9 @@
         <tbody>
             {% for m in pending %}
             <tr>
+                <td class="col-select">
+                    <input type="checkbox" name="member_ids" value="{{ m.id }}" form="bulk-pending">
+                </td>
                 <td>{{ m.name }}</td>
                 <td>{{ m.email }}</td>
                 <td>{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
@@ -81,4 +102,21 @@
     </table>
 </div>
 {% endif %}
+
+<script>
+function toggleSelectAll(source, formId) {
+    document.querySelectorAll('input[name="member_ids"][form="' + formId + '"]').forEach(function (cb) {
+        cb.checked = source.checked;
+    });
+}
+function confirmBulkDelete(form) {
+    var count = document.querySelectorAll('input[name="member_ids"][form="' + form.id + '"]:checked').length;
+    if (count === 0) {
+        alert('Select at least one person to delete.');
+        return false;
+    }
+    var noun = count === 1 ? 'person' : 'people';
+    return confirm('Are you sure you want to delete ' + count + ' selected ' + noun + '?');
+}
+</script>
 {% endblock %}
