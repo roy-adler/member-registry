@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Test Mail{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Test Mail</h1>
+    <p class="text-muted text-small" style="margin-bottom: 16px;">
+        Send a test email using the current SMTP settings. Failures show the full error message.
+    </p>
+
+    <h2>SMTP settings</h2>
+    <table style="margin-bottom: 20px; margin-top: 0;">
+        <tr><th>Server</th><td>{{ mail_config.server }}</td></tr>
+        <tr><th>Port</th><td>{{ mail_config.port }}</td></tr>
+        <tr><th>Username</th><td>{{ mail_config.username }}</td></tr>
+        <tr><th>Sender</th><td>{{ mail_config.sender }}</td></tr>
+        <tr><th>TLS</th><td>{{ 'yes' if mail_config.use_tls else 'no' }}</td></tr>
+        <tr><th>Password</th><td>{{ 'set' if mail_config.password_set else 'not set' }}</td></tr>
+    </table>
+
+    {% if result %}
+    <div class="flash flash-{{ 'success' if result.ok else 'error' }}" style="white-space: pre-wrap;">{{ result.message }}</div>
+    {% endif %}
+
+    <form method="POST">
+        <label for="email">Recipient email</label>
+        <input type="email" id="email" name="email" required value="{{ request.form.get('email', '') }}">
+
+        <label for="subject">Subject <span class="optional-label">(optional)</span></label>
+        <input type="text" id="subject" name="subject" value="{{ request.form.get('subject', 'Test email from Member Registry') }}">
+
+        <label for="body">HTML body <span class="optional-label">(optional)</span></label>
+        <textarea id="body" name="body" rows="5">{{ request.form.get('body', '<p>This is a test email from the Member Registry admin panel.</p>') }}</textarea>
+
+        <button type="submit" class="btn btn-primary">Send test email</button>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Back</a>
+    </form>
+</div>
+{% endblock %}

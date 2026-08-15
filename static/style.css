@@ -64,11 +64,12 @@ h2 { color: var(--color-heading-sub); margin-bottom: 12px; font-size: 1.15em; }
 
 /* ===== Forms ===== */
 label { display: block; margin-bottom: 4px; font-weight: 600; color: var(--color-text-label); font-size: 14px; }
-input[type="text"], input[type="email"], input[type="tel"], input[type="password"] {
+input[type="text"], input[type="email"], input[type="tel"], input[type="password"], textarea {
     width: 100%; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--border-radius);
     font-size: 14px; margin-bottom: 12px; transition: border-color 0.3s; font-family: var(--font-family);
 }
-input:focus { outline: none; border-color: var(--color-primary); }
+textarea { resize: vertical; min-height: 80px; }
+input:focus, textarea:focus { outline: none; border-color: var(--color-primary); }
 
 /* ===== Buttons ===== */
 .btn {

@@ -21,9 +21,11 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
     app.config.from_object('config.Config')
+    if test_config:
+        app.config.update(test_config)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     db.init_app(app)
@@ -115,7 +117,7 @@ def send_email(app, to, subject, html_body):
     username = app.config.get('MAIL_USERNAME', '')
     if not server_cfg or not username:
         logger.info(f'Email to {to} skipped — SMTP not configured')
-        return False
+        return False, 'SMTP not configured (MAIL_SERVER or MAIL_USERNAME is empty).'
     try:
         sender = app.config.get('MAIL_SENDER') or username
         port = app.config.get('MAIL_PORT', 587)
@@ -135,16 +137,19 @@ def send_email(app, to, subject, html_body):
             server.send_message(msg)
 
         logger.info(f'Email sent successfully to {to}')
-        return True
+        return True, None
     except smtplib.SMTPAuthenticationError as e:
+        error = f'SMTPAuthenticationError: {e}'
         logger.error(f'SMTP auth failed for {username}: {e}')
-        return False
+        return False, error
     except smtplib.SMTPException as e:
+        error = f'{type(e).__name__}: {e}'
         logger.error(f'SMTP error sending to {to}: {e}')
-        return False
+        return False, error
     except Exception as e:
-        logger.error(f'Failed to send email to {to}: {type(e).__name__}: {e}')
-        return False
+        error = f'{type(e).__name__}: {e}'
+        logger.error(f'Failed to send email to {to}: {error}')
+        return False, error
 
 
 def register_routes(app):
@@ -182,7 +187,7 @@ def register_routes(app):
         token = generate_confirmation_token(email, app.config['SECRET_KEY'])
         confirm_url = url_for('confirm_email', token=token, _external=True)
 
-        email_sent = send_email(
+        email_sent, _ = send_email(
             app, email, 'Confirm your registration',
             f'<h2>Confirm your email</h2>'
             f'<p>Please click the link below to confirm your registration:</p>'
@@ -225,7 +230,7 @@ def register_routes(app):
         token = generate_confirmation_token(email_addr, app.config['SECRET_KEY'])
         confirm_url = url_for('confirm_email', token=token, _external=True)
 
-        email_sent = send_email(
+        email_sent, _ = send_email(
             app, email_addr, 'Confirm your registration',
             f'<h2>Confirm your email</h2>'
             f'<p>Please click the link below to confirm your registration:</p>'
@@ -252,7 +257,7 @@ def register_routes(app):
         token = generate_confirmation_token(member.email, app.config['SECRET_KEY'])
         confirm_url = url_for('confirm_email', token=token, _external=True)
 
-        email_sent = send_email(
+        email_sent, _ = send_email(
             app, member.email, 'Confirm your registration',
             f'<h2>Confirm your email</h2>'
             f'<p>Please click the link below to confirm your registration:</p>'
@@ -275,7 +280,7 @@ def register_routes(app):
                 token = generate_confirmation_token(email, app.config['SECRET_KEY'])
                 delete_url = url_for('delete_confirm', token=token, _external=True)
 
-                email_sent = send_email(
+                email_sent, _ = send_email(
                     app, email, 'Confirm data deletion',
                     f'<h2>Confirm Deletion</h2>'
                     f'<p>Click the link below to permanently delete your data:</p>'
@@ -419,6 +424,35 @@ def register_routes(app):
         db.session.commit()
         flash(f'Import complete: {added} added, {skipped} skipped (duplicate or invalid).', 'success')
         return redirect(url_for('admin_dashboard'))
+
+    @app.route('/admin/test-mail', methods=['GET', 'POST'])
+    @login_required
+    def admin_test_mail():
+        result = None
+        if request.method == 'POST':
+            to = request.form.get('email', '').strip()
+            subject = request.form.get('subject', '').strip() or 'Test email from Member Registry'
+            body = request.form.get('body', '').strip() or (
+                '<p>This is a test email from the Member Registry admin panel.</p>'
+            )
+            if not to:
+                flash('Email is required.', 'error')
+            else:
+                ok, error = send_email(app, to, subject, body)
+                if ok:
+                    result = {'ok': True, 'message': f'Test email sent to {to}.'}
+                else:
+                    result = {'ok': False, 'message': error}
+
+        mail_config = {
+            'server': app.config.get('MAIL_SERVER') or '(not set)',
+            'port': app.config.get('MAIL_PORT', 587),
+            'username': app.config.get('MAIL_USERNAME') or '(not set)',
+            'sender': (app.config.get('MAIL_SENDER') or app.config.get('MAIL_USERNAME') or '(not set)'),
+            'use_tls': app.config.get('MAIL_USE_TLS', True),
+            'password_set': bool(app.config.get('MAIL_PASSWORD')),
+        }
+        return render_template('admin_test_mail.html', mail_config=mail_config, result=result)
 
 
 app = create_app()

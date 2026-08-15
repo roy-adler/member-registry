@@ -6,6 +6,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
         <h1 style="margin-bottom: 0;">Member List</h1>
         <div style="display: flex; gap: 8px; align-items: center;">
+            <a href="{{ url_for('admin_test_mail') }}" class="btn btn-secondary">Test Mail</a>
             <a href="{{ url_for('admin_export') }}" class="btn btn-primary">Download CSV</a>
             <form method="POST" action="{{ url_for('admin_import') }}" enctype="multipart/form-data" style="display: flex; gap: 8px; align-items: center;">
                 <input type="file" name="file" accept=".csv" required style="font-size: 13px;">
