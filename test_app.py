@@ -189,6 +189,64 @@ class AdminBulkDeleteTest(AdminAppTest):
             self.assertIsNotNone(db.session.get(Member, member_id))
 
 
+class RegisterEmailTest(AdminAppTest):
+    def register(self, name, email, address='', phone=''):
+        with patch('app.send_email', return_value=(True, None)):
+            return self.client.post('/register', data={
+                'name': name,
+                'email': email,
+                'address': address,
+                'phone': phone,
+            }, follow_redirects=True)
+
+    def test_register_trims_and_lowercases_email(self):
+        self.register('Ann', '  User@Example.COM  ')
+        with self.app.app_context():
+            member = Member.query.one()
+            self.assertEqual(member.email, 'user@example.com')
+
+    def test_register_rejects_confirmed_email_with_different_case(self):
+        self.add_member('Ann', 'user@example.com', confirmed=True)
+        response = self.register('Ann', 'USER@example.com')
+        self.assertIn('already registered', response.get_data(as_text=True))
+        with self.app.app_context():
+            self.assertEqual(Member.query.count(), 1)
+
+    def test_register_updates_pending_email_with_different_case(self):
+        self.add_member('Ann', 'user@example.com', confirmed=False)
+        self.register('Bob', '  USER@example.com  ', address='New St')
+        with self.app.app_context():
+            members = Member.query.all()
+            self.assertEqual(len(members), 1)
+            self.assertEqual(members[0].name, 'Bob')
+            self.assertEqual(members[0].email, 'user@example.com')
+            self.assertEqual(members[0].address, 'New St')
+
+    def test_admin_edit_rejects_duplicate_email_different_case(self):
+        keep_id = self.add_member('Ann', 'ann@example.com', confirmed=True)
+        other_id = self.add_member('Bob', 'bob@example.com', confirmed=True)
+        self.login()
+        response = self.client.post(f'/admin/edit/{other_id}', data={
+            'name': 'Bob',
+            'email': 'ANN@example.com',
+            'address': '',
+            'phone': '',
+        }, follow_redirects=True)
+        self.assertIn('already exists', response.get_data(as_text=True))
+        with self.app.app_context():
+            self.assertEqual(db.session.get(Member, other_id).email, 'bob@example.com')
+            self.assertEqual(db.session.get(Member, keep_id).email, 'ann@example.com')
+
+    def test_delete_request_finds_email_ignoring_case_and_space(self):
+        self.add_member('Ann', 'user@example.com', confirmed=True)
+        with patch('app.send_email', return_value=(True, None)):
+            response = self.client.post('/delete-request', data={
+                'email': '  USER@example.com  ',
+            }, follow_redirects=True)
+        self.assertNotIn('No registration found', response.get_data(as_text=True))
+        self.assertIn('user@example.com', response.get_data(as_text=True).lower())
+
+
 if __name__ == '__main__':
     unittest.main()
 

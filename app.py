@@ -7,6 +7,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from datetime import datetime
+from sqlalchemy import func
 import smtplib
 import logging
 import sys
@@ -98,6 +99,20 @@ def ensure_admin_exists():
         db.session.commit()
 
 
+def normalize_email(email):
+    return (email or '').strip().lower()
+
+
+def find_member_by_email(email, **filters):
+    normalized = normalize_email(email)
+    if not normalized:
+        return None
+    query = Member.query.filter(func.lower(Member.email) == normalized)
+    if filters:
+        query = query.filter_by(**filters)
+    return query.first()
+
+
 def generate_confirmation_token(email, secret_key):
     serializer = URLSafeTimedSerializer(secret_key)
     return serializer.dumps(email, salt='email-confirm')
@@ -161,7 +176,7 @@ def register_routes(app):
     @app.route('/register', methods=['POST'])
     def register():
         name = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
+        email = normalize_email(request.form.get('email', ''))
         address = request.form.get('address', '').strip()
         phone = request.form.get('phone', '').strip()
 
@@ -169,13 +184,14 @@ def register_routes(app):
             flash('Name and email are required.', 'error')
             return redirect(url_for('index'))
 
-        existing = Member.query.filter_by(email=email).first()
+        existing = find_member_by_email(email)
         if existing and existing.confirmed:
             flash('This email address is already registered.', 'error')
             return redirect(url_for('index'))
 
         if existing and not existing.confirmed:
             existing.name = name
+            existing.email = email
             existing.address = address
             existing.phone = phone
         else:
@@ -205,7 +221,7 @@ def register_routes(app):
             flash('The confirmation link is invalid or expired.', 'error')
             return redirect(url_for('index'))
 
-        member = Member.query.filter_by(email=email).first()
+        member = find_member_by_email(email)
         if not member:
             flash('Member not found.', 'error')
             return redirect(url_for('index'))
@@ -221,8 +237,8 @@ def register_routes(app):
 
     @app.route('/resend-confirmation', methods=['POST'])
     def resend_confirmation():
-        email_addr = request.form.get('email', '').strip()
-        member = Member.query.filter_by(email=email_addr, confirmed=False).first()
+        email_addr = normalize_email(request.form.get('email', ''))
+        member = find_member_by_email(email_addr, confirmed=False)
         if not member:
             flash('No pending registration found for this email.', 'error')
             return redirect(url_for('index'))
@@ -274,8 +290,8 @@ def register_routes(app):
     @app.route('/delete-request', methods=['GET', 'POST'])
     def delete_request():
         if request.method == 'POST':
-            email = request.form.get('email', '').strip()
-            member = Member.query.filter_by(email=email, confirmed=True).first()
+            email = normalize_email(request.form.get('email', ''))
+            member = find_member_by_email(email, confirmed=True)
             if member:
                 token = generate_confirmation_token(email, app.config['SECRET_KEY'])
                 delete_url = url_for('delete_confirm', token=token, _external=True)
@@ -301,7 +317,7 @@ def register_routes(app):
             flash('The link is invalid or expired.', 'error')
             return redirect(url_for('index'))
 
-        member = Member.query.filter_by(email=email).first()
+        member = find_member_by_email(email)
         if member:
             db.session.delete(member)
             db.session.commit()
@@ -344,9 +360,9 @@ def register_routes(app):
         if not member:
             abort(404)
         if request.method == 'POST':
-            new_email = request.form.get('email', '').strip()
-            existing = Member.query.filter(Member.email == new_email, Member.id != member.id).first()
-            if existing:
+            new_email = normalize_email(request.form.get('email', ''))
+            existing = find_member_by_email(new_email)
+            if existing and existing.id != member.id:
                 flash('A member with this email already exists.', 'error')
                 return redirect(url_for('admin_edit', member_id=member.id))
             member.name = request.form.get('name', '').strip()
@@ -423,12 +439,12 @@ def register_routes(app):
         skipped = 0
 
         for row in reader:
-            email = row.get('Email', '').strip()
+            email = normalize_email(row.get('Email', ''))
             name = row.get('Name', '').strip()
             if not email or not name:
                 skipped += 1
                 continue
-            if email.lower() in existing_emails:
+            if email in existing_emails:
                 skipped += 1
                 continue
 
@@ -452,7 +468,7 @@ def register_routes(app):
     def admin_test_mail():
         result = None
         if request.method == 'POST':
-            to = request.form.get('email', '').strip()
+            to = normalize_email(request.form.get('email', ''))
             subject = request.form.get('subject', '').strip() or 'Test email from Member Registry'
             body = request.form.get('body', '').strip() or (
                 '<p>This is a test email from the Member Registry admin panel.</p>'
