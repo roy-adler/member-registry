@@ -302,6 +302,35 @@ class RegisterEmailTest(AdminAppTest):
         self.assertNotIn('No registration found', response.get_data(as_text=True))
         self.assertIn('user@example.com', response.get_data(as_text=True).lower())
 
+    def test_register_sends_confirmation_from_text_template(self):
+        with patch('app.send_email', return_value=(True, None)) as mock_send:
+            self.client.post('/register', data={
+                'name': 'Ann Adler',
+                'email': 'ann@example.com',
+            })
+        mock_send.assert_called_once()
+        _app, to, subject, body = mock_send.call_args[0]
+        self.assertEqual(to, 'ann@example.com')
+        self.assertIn('Ann Adler', body)
+        self.assertIn('/confirm/', body)
+        self.assertNotIn('<h2>', body)
+        self.assertTrue(subject)
+
+
+class EmailTemplateTest(unittest.TestCase):
+    def test_renders_subject_and_personalized_body(self):
+        from app import render_email_template
+        subject, body = render_email_template(
+            'confirm_registration',
+            name='Ann Adler',
+            email='ann@example.com',
+            confirm_url='https://example.com/confirm/abc',
+        )
+        self.assertIn('Ann Adler', body)
+        self.assertIn('https://example.com/confirm/abc', body)
+        self.assertTrue(subject.strip())
+        self.assertFalse(subject.lower().startswith('subject:'))
+
 
 if __name__ == '__main__':
     unittest.main()

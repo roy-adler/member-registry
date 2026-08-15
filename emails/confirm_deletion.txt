@@ -1,0 +1,9 @@
+Subject: Confirm data deletion
+
+Hello {{ name }},
+
+click the link below to permanently delete your data:
+
+{{ delete_url }}
+
+The link is valid for 1 hour.

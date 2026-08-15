@@ -6,6 +6,8 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+from pathlib import Path
+from jinja2 import Template
 from datetime import datetime
 from sqlalchemy import func
 import imaplib
@@ -130,7 +132,30 @@ def verify_token(token, secret_key, max_age=3600):
         return None
 
 
-def send_email(app, to, subject, html_body):
+EMAILS_DIR = Path(__file__).resolve().parent / 'emails'
+
+
+def render_email_template(template_name, **context):
+    path = EMAILS_DIR / f'{template_name}.txt'
+    raw = path.read_text(encoding='utf-8')
+    if raw.startswith('Subject:'):
+        first_line, _, rest = raw.partition('\n')
+        subject_src = first_line[len('Subject:'):].strip()
+        body_src = rest.lstrip('\n')
+    else:
+        subject_src = template_name
+        body_src = raw
+    subject = Template(subject_src).render(**context)
+    body = Template(body_src).render(**context)
+    return subject, body
+
+
+def send_email_template(app, to, template_name, **context):
+    subject, body = render_email_template(template_name, **context)
+    return send_email(app, to, subject, body)
+
+
+def send_email(app, to, subject, html_body, subtype='plain'):
     server_cfg = app.config.get('MAIL_SERVER', '')
     username = app.config.get('MAIL_USERNAME', '')
     if not server_cfg or not username:
@@ -146,7 +171,7 @@ def send_email(app, to, subject, html_body):
         msg['To'] = to
         msg['Subject'] = subject
         msg['Date'] = formatdate(localtime=True)
-        msg.attach(MIMEText(html_body, 'html'))
+        msg.attach(MIMEText(html_body, subtype))
 
         with smtplib.SMTP(server_cfg, port, timeout=10) as server:
             server.set_debuglevel(0)
@@ -231,12 +256,9 @@ def register_routes(app):
         token = generate_confirmation_token(email, app.config['SECRET_KEY'])
         confirm_url = url_for('confirm_email', token=token, _external=True)
 
-        email_sent, _ = send_email(
-            app, email, 'Confirm your registration',
-            f'<h2>Confirm your email</h2>'
-            f'<p>Please click the link below to confirm your registration:</p>'
-            f'<p><a href="{confirm_url}">Confirm Email</a></p>'
-            f'<p>The link is valid for 1 hour.</p>'
+        email_sent, _ = send_email_template(
+            app, email, 'confirm_registration',
+            name=name, email=email, confirm_url=confirm_url,
         )
 
         return render_template('confirmation_sent.html',
@@ -274,12 +296,9 @@ def register_routes(app):
         token = generate_confirmation_token(email_addr, app.config['SECRET_KEY'])
         confirm_url = url_for('confirm_email', token=token, _external=True)
 
-        email_sent, _ = send_email(
-            app, email_addr, 'Confirm your registration',
-            f'<h2>Confirm your email</h2>'
-            f'<p>Please click the link below to confirm your registration:</p>'
-            f'<p><a href="{confirm_url}">Confirm Email</a></p>'
-            f'<p>The link is valid for 1 hour.</p>'
+        email_sent, _ = send_email_template(
+            app, email_addr, 'confirm_registration',
+            name=member.name, email=email_addr, confirm_url=confirm_url,
         )
 
         if email_sent:
@@ -301,12 +320,9 @@ def register_routes(app):
         token = generate_confirmation_token(member.email, app.config['SECRET_KEY'])
         confirm_url = url_for('confirm_email', token=token, _external=True)
 
-        email_sent, _ = send_email(
-            app, member.email, 'Confirm your registration',
-            f'<h2>Confirm your email</h2>'
-            f'<p>Please click the link below to confirm your registration:</p>'
-            f'<p><a href="{confirm_url}">Confirm Email</a></p>'
-            f'<p>The link is valid for 1 hour.</p>'
+        email_sent, _ = send_email_template(
+            app, member.email, 'confirm_registration',
+            name=member.name, email=member.email, confirm_url=confirm_url,
         )
 
         if email_sent:
@@ -324,12 +340,9 @@ def register_routes(app):
                 token = generate_confirmation_token(email, app.config['SECRET_KEY'])
                 delete_url = url_for('delete_confirm', token=token, _external=True)
 
-                email_sent, _ = send_email(
-                    app, email, 'Confirm data deletion',
-                    f'<h2>Confirm Deletion</h2>'
-                    f'<p>Click the link below to permanently delete your data:</p>'
-                    f'<p><a href="{delete_url}">Delete My Data</a></p>'
-                    f'<p>The link is valid for 1 hour.</p>'
+                email_sent, _ = send_email_template(
+                    app, email, 'confirm_deletion',
+                    name=member.name, email=email, delete_url=delete_url,
                 )
 
                 return render_template('delete_sent.html',
@@ -504,7 +517,7 @@ def register_routes(app):
             if not to:
                 flash('Email is required.', 'error')
             else:
-                ok, error = send_email(app, to, subject, body)
+                ok, error = send_email(app, to, subject, body, subtype='html')
                 if ok:
                     message = f'Test email sent to {to}.'
                     if error:

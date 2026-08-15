@@ -1,0 +1,9 @@
+Subject: Confirm your registration
+
+Hello {{ name }},
+
+please click the link below to confirm your registration:
+
+{{ confirm_url }}
+
+The link is valid for 1 hour.
