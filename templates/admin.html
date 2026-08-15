@@ -75,6 +75,8 @@
                 </th>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Address</th>
+                <th>Phone</th>
                 <th>Registered</th>
                 <th>Actions</th>
             </tr>
@@ -87,6 +89,8 @@
                 </td>
                 <td>{{ m.name }}</td>
                 <td>{{ m.email }}</td>
+                <td>{{ m.address }}</td>
+                <td>{{ m.phone }}</td>
                 <td>{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td class="actions">
                     <form method="POST" action="{{ url_for('admin_resend_confirmation', member_id=m.id) }}">
