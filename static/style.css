@@ -46,7 +46,7 @@ body {
 
 /* ===== Layout ===== */
 .container { max-width: 800px; margin: 0 auto; padding: 15px; }
-.container.wide { max-width: 1100px; }
+.container.wide { max-width: none; width: 100%; }
 
 /* ===== Cards ===== */
 .card {
@@ -91,7 +91,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--color-primary);
 
 /* ===== Navigation ===== */
 nav { background: #b56576; padding: 10px 0; margin-bottom: 16px; }
-nav .nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+nav .nav-inner { max-width: none; margin: 0 auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
 nav a { color: rgba(255,255,255,0.85); text-decoration: none; margin-left: 12px; font-size: 14px; }
 nav a:hover { color: #fff; }
 nav .brand { font-size: 16px; font-weight: 700; color: #fff; text-decoration: none; margin-left: 0; }
