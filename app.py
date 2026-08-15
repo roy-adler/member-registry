@@ -8,11 +8,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from datetime import datetime
 from sqlalchemy import func
+import imaplib
 import smtplib
 import logging
 import sys
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formatdate
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format='%(asctime)s [%(levelname)s] %(message)s')
@@ -142,6 +145,7 @@ def send_email(app, to, subject, html_body):
         msg['From'] = sender
         msg['To'] = to
         msg['Subject'] = subject
+        msg['Date'] = formatdate(localtime=True)
         msg.attach(MIMEText(html_body, 'html'))
 
         with smtplib.SMTP(server_cfg, port, timeout=10) as server:
@@ -152,7 +156,7 @@ def send_email(app, to, subject, html_body):
             server.send_message(msg)
 
         logger.info(f'Email sent successfully to {to}')
-        return True, None
+        return True, save_to_sent_folder(app, msg)
     except smtplib.SMTPAuthenticationError as e:
         error = f'SMTPAuthenticationError: {e}'
         logger.error(f'SMTP auth failed for {username}: {e}')
@@ -165,6 +169,30 @@ def send_email(app, to, subject, html_body):
         error = f'{type(e).__name__}: {e}'
         logger.error(f'Failed to send email to {to}: {error}')
         return False, error
+
+
+def save_to_sent_folder(app, msg):
+    folder = (app.config.get('SENT_FOLDER') or '').strip()
+    if not folder:
+        return None
+    host = app.config.get('MAIL_SERVER', '')
+    username = app.config.get('MAIL_USERNAME', '')
+    password = app.config.get('MAIL_PASSWORD', '')
+    try:
+        with imaplib.IMAP4_SSL(host, 993) as imap:
+            imap.login(username, password)
+            imap.append(
+                folder,
+                '\\Seen',
+                imaplib.Time2Internaldate(time.time()),
+                msg.as_bytes(),
+            )
+        logger.info(f'Saved copy to IMAP folder {folder} on {host}')
+        return None
+    except Exception as e:
+        error = f'Email sent, but saving to Sent folder failed: {type(e).__name__}: {e}'
+        logger.error(error)
+        return error
 
 
 def register_routes(app):
@@ -478,7 +506,10 @@ def register_routes(app):
             else:
                 ok, error = send_email(app, to, subject, body)
                 if ok:
-                    result = {'ok': True, 'message': f'Test email sent to {to}.'}
+                    message = f'Test email sent to {to}.'
+                    if error:
+                        message += f'\n{error}'
+                    result = {'ok': True, 'message': message}
                 else:
                     result = {'ok': False, 'message': error}
 
@@ -489,6 +520,7 @@ def register_routes(app):
             'sender': (app.config.get('MAIL_SENDER') or app.config.get('MAIL_USERNAME') or '(not set)'),
             'use_tls': app.config.get('MAIL_USE_TLS', True),
             'password_set': bool(app.config.get('MAIL_PASSWORD')),
+            'sent_folder': app.config.get('SENT_FOLDER') or '(not set)',
         }
         return render_template('admin_test_mail.html', mail_config=mail_config, result=result)
 

@@ -56,6 +56,62 @@ class SendEmailTest(unittest.TestCase):
         self.assertIn('SMTPAuthenticationError', error)
         self.assertIn('auth failed', error)
 
+    @patch('imaplib.IMAP4_SSL')
+    @patch('app.smtplib.SMTP')
+    def test_saves_copy_to_sent_folder_using_smtp_host_and_login(self, mock_smtp, mock_imap):
+        mock_smtp.return_value.__enter__.return_value = MagicMock()
+        mock_imap_conn = MagicMock()
+        mock_imap.return_value.__enter__.return_value = mock_imap_conn
+        app = make_mail_app(
+            MAIL_SERVER='mail.infomaniak.com',
+            MAIL_PORT=587,
+            MAIL_USERNAME='office@example.com',
+            MAIL_PASSWORD='secret',
+            MAIL_SENDER='office@example.com',
+            MAIL_USE_TLS=True,
+            SENT_FOLDER='Sent',
+        )
+        ok, error = send_email(app, 'user@example.com', 'Subject', '<p>Hi</p>')
+        self.assertTrue(ok)
+        self.assertIsNone(error)
+        mock_imap.assert_called_once_with('mail.infomaniak.com', 993)
+        mock_imap_conn.login.assert_called_once_with('office@example.com', 'secret')
+        append_args = mock_imap_conn.append.call_args[0]
+        self.assertEqual(append_args[0], 'Sent')
+
+    @patch('imaplib.IMAP4_SSL')
+    @patch('app.smtplib.SMTP')
+    def test_does_not_use_imap_when_sent_folder_unset(self, mock_smtp, mock_imap):
+        mock_smtp.return_value.__enter__.return_value = MagicMock()
+        app = make_mail_app(
+            MAIL_SERVER='mail.infomaniak.com',
+            MAIL_PORT=587,
+            MAIL_USERNAME='office@example.com',
+            MAIL_PASSWORD='secret',
+            MAIL_USE_TLS=True,
+        )
+        ok, error = send_email(app, 'user@example.com', 'Subject', '<p>Hi</p>')
+        self.assertTrue(ok)
+        self.assertIsNone(error)
+        mock_imap.assert_not_called()
+
+    @patch('imaplib.IMAP4_SSL')
+    @patch('app.smtplib.SMTP')
+    def test_reports_sent_folder_error_after_smtp_success(self, mock_smtp, mock_imap):
+        mock_smtp.return_value.__enter__.return_value = MagicMock()
+        mock_imap.return_value.__enter__.side_effect = OSError('imap connection refused')
+        app = make_mail_app(
+            MAIL_SERVER='mail.infomaniak.com',
+            MAIL_USERNAME='office@example.com',
+            MAIL_PASSWORD='secret',
+            SENT_FOLDER='Sent',
+        )
+        ok, error = send_email(app, 'user@example.com', 'Subject', '<p>Hi</p>')
+        self.assertTrue(ok)
+        self.assertIsNotNone(error)
+        self.assertIn('Sent', error)
+        self.assertIn('imap connection refused', error)
+
 
 class AdminAppTest(unittest.TestCase):
     def setUp(self):

@@ -12,3 +12,4 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
     MAIL_SENDER = os.environ.get('MAIL_SENDER', '')
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() == 'true'
+    SENT_FOLDER = os.environ.get('SENT_FOLDER', '')

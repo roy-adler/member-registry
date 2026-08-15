@@ -4,7 +4,7 @@
 <div class="card">
     <h1>Test Mail</h1>
     <p class="text-muted text-small" style="margin-bottom: 16px;">
-        Send a test email using the current SMTP settings. Failures show the full error message.
+        Send a test email using the current SMTP settings. If a sent folder is configured, a copy is saved there via IMAP on the same server. Failures show the full error message.
     </p>
 
     <h2>SMTP settings</h2>
@@ -15,6 +15,7 @@
         <tr><th>Sender</th><td>{{ mail_config.sender }}</td></tr>
         <tr><th>TLS</th><td>{{ 'yes' if mail_config.use_tls else 'no' }}</td></tr>
         <tr><th>Password</th><td>{{ 'set' if mail_config.password_set else 'not set' }}</td></tr>
+        <tr><th>Sent folder</th><td>{{ mail_config.sent_folder }}</td></tr>
     </table>
 
     {% if result %}
